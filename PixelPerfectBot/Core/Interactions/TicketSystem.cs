@@ -12,9 +12,9 @@ namespace PixelPerfectBot.Core.Interactions
         public async Task CreateGeneralSupportTicket()
         {
             var user = DB.GetUser(Context.User.Id);
-            if (user.GeneralSupportCooldown > DateTime.Now)
+            if (user.GeneralSupportCooldown > DateTime.UtcNow)
             {
-                await RespondAsync("You are on cooldown for this ticket. Please try again in 24 hours", ephemeral: true);
+                await RespondAsync($"You are on cooldown for this ticket. Please try again <t:{DateTimeOffset.FromFileTime(user.GeneralSupportCooldown.ToFileTime()).ToUnixTimeSeconds()}:R>", ephemeral: true);
                 return;
             }
             if (!Database.DBData.Tickets.Exists(x => x.UserId == Context.User.Id && x.Type == 0))
@@ -24,8 +24,9 @@ namespace PixelPerfectBot.Core.Interactions
                 await channel.AddPermissionOverwriteAsync(Context.User, new OverwritePermissions().Modify(viewChannel: PermValue.Allow, sendMessages: PermValue.Allow));
                 DB.CreateTicket(0, Context.User.Id);
                 await channel.SendMessageAsync(Context.User.Mention, components: new ComponentBuilder().WithButton("Close Ticket", $"CloseTicket:{Context.User.Id},{0}", ButtonStyle.Danger).Build());
-                user.GeneralSupportCooldown = DateTime.Now.AddDays(1);
+                user.GeneralSupportCooldown = DateTime.UtcNow.AddDays(1);
                 DB.UpdateUser(user);
+                await new Utils().DiscordLog(Context.Guild, "Ticket Created", $"Ticket created by {Context.User.Mention}\nType: General Support", Color.Green);
             }
             else
                 await RespondAsync("Could not create ticket. You already have a duplicate ticket open.", ephemeral: true);
@@ -35,9 +36,9 @@ namespace PixelPerfectBot.Core.Interactions
         public async Task CreateContentSupportTicket()
         {
             var user = DB.GetUser(Context.User.Id);
-            if (user.ContentSupportCooldown > DateTime.Now)
+            if (user.ContentSupportCooldown > DateTime.UtcNow)
             {
-                await RespondAsync("You are on cooldown for this ticket. Please try again in 24 hours", ephemeral: true);
+                await RespondAsync($"You are on cooldown for this ticket. Please try again <t:{DateTimeOffset.FromFileTime(user.ContentSupportCooldown.ToFileTime()).ToUnixTimeSeconds()}:R>", ephemeral: true);
                 return;
             }
             if (!Database.DBData.Tickets.Exists(x => x.UserId == Context.User.Id && x.Type == 1))
@@ -47,8 +48,9 @@ namespace PixelPerfectBot.Core.Interactions
                 await channel.AddPermissionOverwriteAsync(Context.User, new OverwritePermissions().Modify(viewChannel: PermValue.Allow, sendMessages: PermValue.Allow));
                 DB.CreateTicket(1, Context.User.Id);
                 await channel.SendMessageAsync(Context.User.Mention, components: new ComponentBuilder().WithButton("Close Ticket", $"CloseTicket:{Context.User.Id},{1}", ButtonStyle.Danger).Build());
-                user.ContentSupportCooldown = DateTime.Now.AddDays(1);
+                user.ContentSupportCooldown = DateTime.UtcNow.AddDays(1);
                 DB.UpdateUser(user);
+                await new Utils().DiscordLog(Context.Guild, "Ticket Created", $"Ticket created by {Context.User.Mention}\nType: Content Support", Color.Green);
             }
             else
                 await RespondAsync("Could not create ticket. You already have a duplicate ticket open.", ephemeral: true);
@@ -58,9 +60,9 @@ namespace PixelPerfectBot.Core.Interactions
         public async Task CreateServerSupportTicket()
         {
             var user = DB.GetUser(Context.User.Id);
-            if (user.ServerSupportCooldown > DateTime.Now)
+            if (user.ServerSupportCooldown > DateTime.UtcNow)
             {
-                await RespondAsync("You are on cooldown for this ticket. Please try again in 24 hours", ephemeral: true);
+                await RespondAsync($"You are on cooldown for this ticket. Please try again <t:{DateTimeOffset.FromFileTime(user.ServerSupportCooldown.ToFileTime()).ToUnixTimeSeconds()}:R>", ephemeral: true);
                 return;
             }
             if (!Database.DBData.Tickets.Exists(x => x.UserId == Context.User.Id && x.Type == 2))
@@ -70,8 +72,9 @@ namespace PixelPerfectBot.Core.Interactions
                 await channel.AddPermissionOverwriteAsync(Context.User, new OverwritePermissions().Modify(viewChannel: PermValue.Allow, sendMessages: PermValue.Allow));
                 DB.CreateTicket(2, Context.User.Id);
                 await channel.SendMessageAsync(Context.User.Mention, components: new ComponentBuilder().WithButton("Close Ticket", $"CloseTicket:{Context.User.Id},{2}", ButtonStyle.Danger).Build());
-                user.ServerSupportCooldown = DateTime.Now.AddDays(1);
+                user.ServerSupportCooldown = DateTime.UtcNow.AddDays(1);
                 DB.UpdateUser(user);
+                await new Utils().DiscordLog(Context.Guild, "Ticket Created", $"Ticket created by {Context.User.Mention}\nType: Server Support", Color.Green);
             }
             else
                 await RespondAsync("Could not create ticket. You already have a duplicate ticket open.", ephemeral: true);
@@ -81,7 +84,14 @@ namespace PixelPerfectBot.Core.Interactions
         public async Task CloseTicket(string UserId, string TicketType)
         {
             var user = Context.User as SocketGuildUser;
-            if(UserId == Context.User.Id.ToString() || user.GuildPermissions.Administrator)
+            string ticketType = "";
+            switch(TicketType)
+            {
+                case "0": ticketType = "General Support"; break;
+                case "1": ticketType = "Content Support"; break;
+                case "2":  ticketType = "Server Support"; break;
+            }
+            if(UserId == Context.User.Id.ToString() || user.GuildPermissions.Administrator || user.Roles.FirstOrDefault(x => x.Id == Config.BotConfiguration.TicketManagerRoleId) != null)
             {
                 await DeferAsync();
                 var channel = Context.Channel as SocketTextChannel;
@@ -89,7 +99,12 @@ namespace PixelPerfectBot.Core.Interactions
                 {
                     await channel.DeleteAsync();
                     DB.DeleteTicket(Convert.ToInt16(TicketType), Convert.ToUInt64(UserId));
+                    await new Utils().DiscordLog(Context.Guild, "Ticket Deleted", $"Ticket deleted by {Context.User.Mention}\nType: {ticketType}", Color.DarkRed);
                 }
+            }
+            else
+            {
+                await RespondAsync("Cannot close ticket. You do not have the permissions to close this ticket.", ephemeral: true);
             }
         }
     }

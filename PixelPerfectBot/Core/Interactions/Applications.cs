@@ -17,7 +17,7 @@ namespace PixelPerfectBot.Core.Interactions
             return;
 
             var user = DB.GetUser(Context.User.Id);
-            if (user.ClaimVIPCooldown > DateTime.Now || user.SentClaimVIP)
+            if (user.ClaimVIPCooldown > DateTime.UtcNow || user.SentClaimVIP)
             {
                 await RespondAsync("You either have already sent an application or you are on cooldown for this application", ephemeral: true);
                 return;
@@ -41,7 +41,7 @@ namespace PixelPerfectBot.Core.Interactions
             try
             {
                 var user = DB.GetUser(Context.User.Id);
-                if (user.ContentCreatorCooldown > DateTime.Now || user.SentContentCreator)
+                if (user.ContentCreatorCooldown > DateTime.UtcNow || user.SentContentCreator)
                 {
                     await RespondAsync("You either have already sent an application or you are on cooldown for this application", ephemeral: true);
                     return;
@@ -116,7 +116,7 @@ namespace PixelPerfectBot.Core.Interactions
         public async Task SubmitCCApp(string GuildId)
         {
             var user = DB.GetUser(Context.User.Id);
-            if (user.ContentCreatorCooldown > DateTime.Now || user.SentContentCreator)
+            if (user.ContentCreatorCooldown > DateTime.UtcNow || user.SentContentCreator)
             {
                 await RespondAsync("You either have already sent an application or you are on cooldown for this application", ephemeral: true);
                 return;
@@ -139,7 +139,7 @@ namespace PixelPerfectBot.Core.Interactions
             await Context.Client.GetGuild(Convert.ToUInt64(GuildId)).GetTextChannel(Config.BotConfiguration.ApplicationChannel).SendMessageAsync(embed: embed.Build(), components: builder.Build());
             await FollowupAsync("Submitted Application");
             await DeleteOriginalResponseAsync();
-            user.ContentCreatorCooldown = DateTime.Now.AddDays(7);
+            user.ContentCreatorCooldown = DateTime.UtcNow.AddDays(7);
             user.SentContentCreator = true;
             DB.UpdateUser(user);
         }
@@ -182,7 +182,7 @@ namespace PixelPerfectBot.Core.Interactions
                 UserData.SentContentCreator = false;
                 DB.UpdateUser(UserData);
                 await Context.Interaction.Message.ModifyAsync(x => { x.Content = $"Denied Application: Denied by {Context.User.Mention}"; x.Components = null; });
-                await user.SendMessageAsync("Unfortunately your Content Creator application has been denied. You will be able to try again once your cooldown finishes!");
+                await user.SendMessageAsync($"Unfortunately your Content Creator application has been denied. You will be able to try again <t:{DateTimeOffset.FromFileTime(UserData.ContentCreatorCooldown.ToFileTime()).ToUnixTimeSeconds()}:R>");
                 await RespondAsync("Denied Application", ephemeral: true);
             }
             catch (Exception ex)
