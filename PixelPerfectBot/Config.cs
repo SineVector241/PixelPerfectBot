@@ -43,9 +43,12 @@ namespace PixelPerfectBot
             public ulong MCBEServerSupportCategory { get; set; }
             public ulong ApplicationChannel { get; set; }
             public ulong LoggingChannel { get; set; }
+            public ulong VIPApplicationChannel { get; set; }
 
             public ulong ContentCreatorRoleId { get; set; }
+            public ulong ChatModRoleId { get; set; }
             public ulong TicketManagerRoleId { get; set; }
+            public ulong VIPRoleId { get; set; }
         }
     }
 }

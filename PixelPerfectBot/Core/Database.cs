@@ -114,6 +114,7 @@ namespace PixelPerfectBot.Core
             public DateTime ServerSupportCooldown { get; set; }
             public DateTime ClaimVIPCooldown { get; set; }
             public DateTime ContentCreatorCooldown { get; set; }
+            public DateTime RemoveVIPRole { get; set; }
 
             public bool SentContentCreator { get; set; }
             public bool SentClaimVIP { get; set; }

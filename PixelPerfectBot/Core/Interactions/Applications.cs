@@ -13,26 +13,14 @@ namespace PixelPerfectBot.Core.Interactions
         [ComponentInteraction("VIP")]
         public async Task ClaimVIP()
         {
-            await RespondAsync("This is still currently under development. Try again later in a couple of days.", ephemeral: true);
-            return;
-
             var user = DB.GetUser(Context.User.Id);
-            if (user.ClaimVIPCooldown > DateTime.UtcNow || user.SentClaimVIP)
+            var guilduser = Context.User as SocketGuildUser;
+            if (user.ClaimVIPCooldown > DateTime.UtcNow || user.SentClaimVIP || guilduser.Roles.FirstOrDefault(x => x.Id == Config.BotConfiguration.VIPRoleId) != null)
             {
-                await RespondAsync("You either have already sent an application or you are on cooldown for this application", ephemeral: true);
+                await RespondAsync("You either have already sent an application, Have the role or you are on cooldown for this application", ephemeral: true);
                 return;
             }
-            var channel = Context.Guild.GetTextChannel(Config.BotConfiguration.ApplicationChannel);
-            var embed = new EmbedBuilder()
-                .WithTitle("Claim VIP Application")
-                .AddField("User", Context.User.Mention)
-                .WithColor(Color.Gold)
-                .WithCurrentTimestamp();
-            var builder = new ComponentBuilder()
-                .WithButton("Accept", $"AcceptVIP:{Context.User.Id}", ButtonStyle.Success)
-                .WithButton("Deny", $"DenyVIP:{Context.User.Id}", ButtonStyle.Danger);
-            await RespondAsync("Sent claim", ephemeral: true);
-            await channel.SendMessageAsync(embed: embed.Build(), components: builder.Build());
+            await RespondWithModalAsync<VIPRoleApplication>("VIPApplication");
         }
 
         [ComponentInteraction("ContentCreator")]
@@ -98,7 +86,7 @@ namespace PixelPerfectBot.Core.Interactions
                 {
                     var msg = await FollowupAsync($"{field.Name}\n**Answer Below This Message**");
                     var answer = await Interactive.NextMessageAsync(x => x.Author.Id == Context.User.Id && x.Channel.Id == Context.Channel.Id, timeout: TimeSpan.FromMinutes(5));
-                    if(answer.IsSuccess)
+                    if (answer.IsSuccess)
                     {
                         field.Value = answer.Value;
                         await ModifyOriginalResponseAsync(x => x.Embed = embed.Build());
@@ -123,9 +111,9 @@ namespace PixelPerfectBot.Core.Interactions
             }
             var builder = new ComponentBuilder()
                 .WithButton("Accept", $"AcceptCCApp:{Context.User.Id}", ButtonStyle.Success, Emoji.Parse("✅"))
-                .WithButton("Deny", $"DenyCCApp:{Context.User.Id}", ButtonStyle.Success, Emoji.Parse("❌"));
+                .WithButton("Deny", $"DenyCCApp:{Context.User.Id}", ButtonStyle.Secondary, Emoji.Parse("❌"));
             var embed = Context.Interaction.Message.Embeds.First().ToEmbedBuilder();
-            foreach(var field in embed.Fields)
+            foreach (var field in embed.Fields)
             {
                 Console.WriteLine(field.Value);
                 if (field.Value.ToString() == "Not Answered" && !field.Name.StartsWith("Q7"))
@@ -160,6 +148,7 @@ namespace PixelPerfectBot.Core.Interactions
                 catch
                 {
                     await RespondAsync("Could not send the user the DM message but accepted the application", ephemeral: true);
+                    await Context.Interaction.Message.ModifyAsync(x => { x.Content = $"Accepted Application: Accepted by {Context.User.Mention}"; x.Components = null; });
                     return;
                 }
                 await RespondAsync("Accepted User", ephemeral: true);
@@ -185,10 +174,108 @@ namespace PixelPerfectBot.Core.Interactions
                 await user.SendMessageAsync($"Unfortunately your Content Creator application has been denied. You will be able to try again <t:{DateTimeOffset.FromFileTime(UserData.ContentCreatorCooldown.ToFileTime()).ToUnixTimeSeconds()}:R>");
                 await RespondAsync("Denied Application", ephemeral: true);
             }
-            catch (Exception ex)
+            catch
             {
                 await RespondAsync("Could not send DM or the user does not exist. Denied Application Successfully", ephemeral: true);
+                await Context.Interaction.Message.ModifyAsync(x => { x.Content = $"Denied Application: Denied by {Context.User.Mention}"; x.Components = null; });
             }
         }
+
+        [ComponentInteraction("AcceptVIPApp:*")]
+        public async Task AcceptVIPApplication(string UserId)
+        {
+            var UserData = DB.GetUser(Context.User.Id);
+            try
+            {
+                var user = Context.Guild.GetUser(Convert.ToUInt64(UserId));
+                await user.AddRoleAsync(Config.BotConfiguration.VIPRoleId);
+                try
+                {
+                    UserData.SentClaimVIP = false;
+                    UserData.RemoveVIPRole = DateTime.UtcNow.AddDays(31);
+                    DB.UpdateUser(UserData);
+                    await user.SendMessageAsync("You have successfully recieved your VIP Role for 31 days. You will need to reapply again for the VIP role if you still have VIP");
+                }
+                catch
+                {
+                    await RespondAsync("Could not send the user the DM message but accepted the application", ephemeral: true);
+                    await Context.Interaction.Message.ModifyAsync(x => { x.Content = $"Accepted Application: Accepted by {Context.User.Mention}"; x.Components = null; });
+                    return;
+                }
+                await RespondAsync("Accepted User", ephemeral: true);
+                await Context.Interaction.Message.ModifyAsync(x => { x.Content = $"Accepted Application: Accepted by {Context.User.Mention}"; x.Components = null; });
+            }
+            catch
+            {
+                await Context.Interaction.Message.ModifyAsync(x => { x.Content = "Application could not be accepted"; x.Components = null; });
+                await RespondAsync("Could not accept user as this user may not exist in the server.", ephemeral: true);
+            }
+        }
+
+        [ComponentInteraction("DenyVIPApp:*")]
+        public async Task DenyVIPApp(string UserId)
+        {
+            try
+            {
+                var user = Context.Guild.GetUser(Convert.ToUInt64(UserId));
+                var UserData = DB.GetUser(Convert.ToUInt64(UserId));
+                UserData.SentClaimVIP = false;
+                DB.UpdateUser(UserData);
+                await Context.Interaction.Message.ModifyAsync(x => { x.Content = $"Denied Application: Denied by {Context.User.Mention}"; x.Components = null; });
+                await user.SendMessageAsync($"Unfortunately your VIP application has been denied. You will be able to try again <t:{DateTimeOffset.FromFileTime(UserData.ClaimVIPCooldown.ToFileTime()).ToUnixTimeSeconds()}:R>");
+                await RespondAsync("Denied Application", ephemeral: true);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                await RespondAsync("Could not send DM or the user does not exist. Denied Application Successfully", ephemeral: true);
+                await Context.Interaction.Message.ModifyAsync(x => { x.Content = $"Denied Application: Denied by {Context.User.Mention}"; x.Components = null; });
+            }
+        }
+    }
+
+    public class VIPRoleApplications : InteractionModuleBase<SocketInteractionContext<SocketInteraction>>
+    {
+        private Database DB = new Database();
+
+        [ModalInteraction("VIPApplication")]
+        public async Task SubmitVIPApplication(VIPRoleApplication modal)
+        {
+            var user = DB.GetUser(Context.User.Id);
+            var channel = Context.Guild.GetTextChannel(Config.BotConfiguration.VIPApplicationChannel);
+            var embed = new EmbedBuilder()
+                .WithTitle($"New VIP Application: {Context.User.Username}")
+                .AddField("Profile Link", modal.ProfileLink)
+                .AddField("Email", modal.Email)
+                .AddField("Proof Of Purchase", modal.ProofOfPurchase)
+                .WithAuthor(Context.User)
+                .WithTimestamp(DateTime.UtcNow)
+                .WithColor(Color.Green);
+            var builder = new ComponentBuilder()
+                .WithButton("Accept", $"AcceptVIPApp:{Context.User.Id}", ButtonStyle.Success, Emoji.Parse("✅"))
+                .WithButton("Deny", $"DenyVIPApp:{Context.User.Id}", ButtonStyle.Secondary, Emoji.Parse("❌"));
+            await channel.SendMessageAsync(embed: embed.Build(), components: builder.Build());
+            user.SentClaimVIP = true;
+            user.ClaimVIPCooldown = DateTime.UtcNow.AddDays(7);
+            DB.UpdateUser(user);
+            await RespondAsync("Successfully sent application", ephemeral: true);
+        }
+    }
+
+    public class VIPRoleApplication : IModal
+    {
+        public string Title => "VIP Role Application";
+
+        [InputLabel("Pixels Perfect Profile")]
+        [ModalTextInput("PPLink", placeholder: "Link to Pixels Perfect Profile")]
+        public string ProfileLink { get; set; }
+
+        [InputLabel("Email")]
+        [ModalTextInput("Email")]
+        public string Email { get; set; }
+
+        [InputLabel("Proof Of Purchase(Image)")]
+        [ModalTextInput("IMG", placeholder: "LINK ONLY!")]
+        public string ProofOfPurchase { get; set; }
     }
 }

@@ -23,7 +23,7 @@ namespace PixelPerfectBot.Core.Interactions
                 var channel = await Context.Guild.CreateTextChannelAsync(Context.User.Username, x => { x.CategoryId = Config.BotConfiguration.GeneralSupportCategory; });
                 await channel.AddPermissionOverwriteAsync(Context.User, new OverwritePermissions().Modify(viewChannel: PermValue.Allow, sendMessages: PermValue.Allow));
                 DB.CreateTicket(0, Context.User.Id);
-                await channel.SendMessageAsync(Context.User.Mention, components: new ComponentBuilder().WithButton("Close Ticket", $"CloseTicket:{Context.User.Id},{0}", ButtonStyle.Danger).Build());
+                await channel.SendMessageAsync($"{Context.User.Mention}, <@&{Config.BotConfiguration.ChatModRoleId}>", embed: new EmbedBuilder().WithTitle("General Support Ticket").WithDescription("Please specify what your problem/question is and we will respond back to you shortly.").WithColor(Color.LightOrange).Build(), components: new ComponentBuilder().WithButton("Close Ticket", $"CloseTicket:{Context.User.Id},{0}", ButtonStyle.Danger).Build());
                 user.GeneralSupportCooldown = DateTime.UtcNow.AddDays(1);
                 DB.UpdateUser(user);
                 await new Utils().DiscordLog(Context.Guild, "Ticket Created", $"Ticket created by {Context.User.Mention}\nType: General Support", Color.Green);
@@ -47,7 +47,7 @@ namespace PixelPerfectBot.Core.Interactions
                 var channel = await Context.Guild.CreateTextChannelAsync(Context.User.Username, x => { x.CategoryId = Config.BotConfiguration.ContentSupportCategory; });
                 await channel.AddPermissionOverwriteAsync(Context.User, new OverwritePermissions().Modify(viewChannel: PermValue.Allow, sendMessages: PermValue.Allow));
                 DB.CreateTicket(1, Context.User.Id);
-                await channel.SendMessageAsync(Context.User.Mention, components: new ComponentBuilder().WithButton("Close Ticket", $"CloseTicket:{Context.User.Id},{1}", ButtonStyle.Danger).Build());
+                await channel.SendMessageAsync($"{Context.User.Mention}, <@&{Config.BotConfiguration.ContentCreatorRoleId}>", embed: new EmbedBuilder().WithTitle("Content Support Ticket").WithDescription("Please specify what your problem/question is and we will respond back to you shortly.").WithColor(Color.LightOrange).Build(), components: new ComponentBuilder().WithButton("Close Ticket", $"CloseTicket:{Context.User.Id},{1}", ButtonStyle.Danger).Build());
                 user.ContentSupportCooldown = DateTime.UtcNow.AddDays(1);
                 DB.UpdateUser(user);
                 await new Utils().DiscordLog(Context.Guild, "Ticket Created", $"Ticket created by {Context.User.Mention}\nType: Content Support", Color.Green);
@@ -71,7 +71,7 @@ namespace PixelPerfectBot.Core.Interactions
                 var channel = await Context.Guild.CreateTextChannelAsync(Context.User.Username, x => { x.CategoryId = Config.BotConfiguration.MCBEServerSupportCategory; });
                 await channel.AddPermissionOverwriteAsync(Context.User, new OverwritePermissions().Modify(viewChannel: PermValue.Allow, sendMessages: PermValue.Allow));
                 DB.CreateTicket(2, Context.User.Id);
-                await channel.SendMessageAsync(Context.User.Mention, components: new ComponentBuilder().WithButton("Close Ticket", $"CloseTicket:{Context.User.Id},{2}", ButtonStyle.Danger).Build());
+                await channel.SendMessageAsync($"{Context.User.Mention}, <@&{Config.BotConfiguration.ChatModRoleId}>", embed: new EmbedBuilder().WithTitle("Server Support Ticket").WithDescription("Please specify what your problem/question is and we will respond back to you shortly.").WithColor(Color.LightOrange).Build(), components: new ComponentBuilder().WithButton("Close Ticket", $"CloseTicket:{Context.User.Id},{2}", ButtonStyle.Danger).Build());
                 user.ServerSupportCooldown = DateTime.UtcNow.AddDays(1);
                 DB.UpdateUser(user);
                 await new Utils().DiscordLog(Context.Guild, "Ticket Created", $"Ticket created by {Context.User.Mention}\nType: Server Support", Color.Green);
