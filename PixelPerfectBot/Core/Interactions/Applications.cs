@@ -23,6 +23,18 @@ namespace PixelPerfectBot.Core.Interactions
             await RespondWithModalAsync<VIPRoleApplication>("VIPApplication");
         }
 
+        [ComponentInteraction("Suggest")]
+        public async Task SendSuggestModal()
+        {
+            var user = DB.GetUser(Context.User.Id);
+            if (user.SuggestionCooldown > DateTime.UtcNow)
+            {
+                await RespondAsync($"You are on cooldown for this. Please try again <t:{DateTimeOffset.FromFileTime(user.SuggestionCooldown.ToFileTime()).ToUnixTimeSeconds()}:R>", ephemeral: true);
+                return;
+            }
+            await RespondWithModalAsync<SuggestionApplication>("SubmitSuggestion");
+        }
+
         [ComponentInteraction("ContentCreator")]
         public async Task ContentCreatorApplication()
         {
@@ -232,9 +244,50 @@ namespace PixelPerfectBot.Core.Interactions
                 await Context.Interaction.Message.ModifyAsync(x => { x.Content = $"Denied Application: Denied by {Context.User.Mention}"; x.Components = null; });
             }
         }
+
+        //========================= Upvote and Downvote actions below =========================
+        [ComponentInteraction("UpvoteSuggestion")]
+        public async Task UpvoteSuggestion()
+        {
+            if (Context.Interaction.Message.Embeds.First().Fields[0].Value.Contains(Context.User.Id.ToString()) || Context.Interaction.Message.Embeds.First().Fields[1].Value.Contains(Context.User.Id.ToString()))
+            {
+                await RespondAsync("You have already voted on this suggestion!", ephemeral: true);
+                return;
+            }
+            var embed = EmbedBuilderExtensions.ToEmbedBuilder(Context.Interaction.Message.Embeds.First());
+            embed.Fields[0].Value += $"\n{Context.User.Mention}";
+            embed.Fields[0].Value = embed.Fields[0].Value.ToString().Replace("No Upvote Users", "");
+            if (embed.Footer.Text == "7")
+            {
+                embed.WithFooter("Top Suggestion");
+                await Context.Guild.GetTextChannel(Config.BotConfiguration.TopSuggestionChannel).SendMessageAsync(embed: embed.Build());
+            }
+            else if(embed.Footer.Text != "Top Suggestion")
+            {
+                embed.WithFooter((Convert.ToInt16(embed.Footer.Text) + 1).ToString());
+            }
+            await Context.Interaction.Message.ModifyAsync(x => x.Embed = embed.Build());
+            await RespondAsync("Upvoted Suggestion!", ephemeral: true);
+        }
+
+        [ComponentInteraction("DownvoteSuggestion")]
+        public async Task DownvoteSuggestion()
+        {
+            if (Context.Interaction.Message.Embeds.First().Fields[0].Value.Contains(Context.User.Id.ToString()) || Context.Interaction.Message.Embeds.First().Fields[1].Value.Contains(Context.User.Id.ToString()))
+            {
+                await RespondAsync("You have already voted on this suggestion!", ephemeral: true);
+                return;
+            }
+            var embed = EmbedBuilderExtensions.ToEmbedBuilder(Context.Interaction.Message.Embeds.First());
+            embed.Fields[1].Value += $"\n{Context.User.Mention}";
+            embed.Fields[1].Value = embed.Fields[1].Value.ToString().Replace("No Downvote Users", "");
+            embed.WithFooter((Convert.ToInt16(embed.Footer.Text) - 1).ToString());
+            await Context.Interaction.Message.ModifyAsync(x => x.Embed = embed.Build());
+            await RespondAsync("Downvoted Suggestion!", ephemeral: true);
+        }
     }
 
-    public class VIPRoleApplications : InteractionModuleBase<SocketInteractionContext<SocketInteraction>>
+    public class ModalApplications : InteractionModuleBase<SocketInteractionContext<SocketInteraction>>
     {
         private Database DB = new Database();
 
@@ -260,6 +313,29 @@ namespace PixelPerfectBot.Core.Interactions
             DB.UpdateUser(user);
             await RespondAsync("Successfully sent application", ephemeral: true);
         }
+
+        [ModalInteraction("SubmitSuggestion")]
+        public async Task SubmitSuggestionModal(SuggestionApplication modal)
+        {
+            var user = DB.GetUser(Context.User.Id);
+            var channel = Context.Guild.GetTextChannel(Config.BotConfiguration.SuggestionChannel);
+            var embed = new EmbedBuilder()
+                .WithTitle(modal.SuggestionTitle)
+                .WithDescription(modal.Description)
+                .AddField("Upvotes", "No Upvote Users")
+                .AddField("Downvotes", "No Downvote Users")
+                .WithColor(Color.LightOrange)
+                .WithAuthor(Context.User)
+                .WithFooter("0")
+                .WithTimestamp(DateTime.UtcNow);
+            var builder = new ComponentBuilder()
+                .WithButton("Upvote", "UpvoteSuggestion", ButtonStyle.Success, Emoji.Parse("👍"))
+                .WithButton("Downvote", "DownvoteSuggestion", ButtonStyle.Danger, Emoji.Parse("👎"));
+            await channel.SendMessageAsync($"Suggestion from {Context.User.Mention}", embed: embed.Build(), components: builder.Build());
+            user.SuggestionCooldown = DateTime.UtcNow.AddMinutes(15);
+            DB.UpdateUser(user);
+            await RespondAsync("Successfully sent suggestion", ephemeral: true);
+        }
     }
 
     public class VIPRoleApplication : IModal
@@ -277,5 +353,18 @@ namespace PixelPerfectBot.Core.Interactions
         [InputLabel("Proof Of Purchase(Image)")]
         [ModalTextInput("IMG", placeholder: "LINK ONLY!")]
         public string ProofOfPurchase { get; set; }
+    }
+
+    public class SuggestionApplication : IModal
+    {
+        public string Title => "Suggestion";
+
+        [InputLabel("Title of suggestion")]
+        [ModalTextInput("Title", maxLength: 125)]
+        public string SuggestionTitle { get; set; }
+
+        [InputLabel("Description of suggestion")]
+        [ModalTextInput("Description")]
+        public string Description { get; set; }
     }
 }

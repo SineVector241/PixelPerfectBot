@@ -44,6 +44,8 @@ namespace PixelPerfectBot
             public ulong ApplicationChannel { get; set; }
             public ulong LoggingChannel { get; set; }
             public ulong VIPApplicationChannel { get; set; }
+            public ulong SuggestionChannel { get; set; }
+            public ulong TopSuggestionChannel { get; set; }
 
             public ulong ContentCreatorRoleId { get; set; }
             public ulong ChatModRoleId { get; set; }
