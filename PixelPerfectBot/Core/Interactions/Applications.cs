@@ -249,23 +249,23 @@ namespace PixelPerfectBot.Core.Interactions
         [ComponentInteraction("UpvoteSuggestion")]
         public async Task UpvoteSuggestion()
         {
-            if (Context.Interaction.Message.Embeds.First().Fields[0].Value.Contains(Context.User.Id.ToString()) || Context.Interaction.Message.Embeds.First().Fields[1].Value.Contains(Context.User.Id.ToString()))
+            var suggestion = DB.GetSuggestion(Context.Interaction.Message.Id);
+            if (suggestion.UserIds.Exists(x => x == Context.User.Id))
             {
                 await RespondAsync("You have already voted on this suggestion!", ephemeral: true);
                 return;
             }
+            suggestion.UserIds.Add(Context.User.Id);
+            suggestion.UpvotesDownvotes += 1;
             var embed = EmbedBuilderExtensions.ToEmbedBuilder(Context.Interaction.Message.Embeds.First());
-            embed.Fields[0].Value += $"\n{Context.User.Mention}";
-            embed.Fields[0].Value = embed.Fields[0].Value.ToString().Replace("No Upvote Users", "");
-            if (embed.Footer.Text == "7")
+            embed.Fields.First().WithValue(suggestion.UpvotesDownvotes.ToString());
+
+            if (suggestion.UpvotesDownvotes == 8 && !suggestion.TopSuggestion)
             {
-                embed.WithFooter("Top Suggestion");
-                await Context.Guild.GetTextChannel(Config.BotConfiguration.TopSuggestionChannel).SendMessageAsync(embed: embed.Build());
+                await Context.Guild.GetTextChannel(Config.BotConfiguration.TopSuggestionChannel).SendMessageAsync();
+                suggestion.TopSuggestion = true;
             }
-            else if(embed.Footer.Text != "Top Suggestion")
-            {
-                embed.WithFooter((Convert.ToInt16(embed.Footer.Text) + 1).ToString());
-            }
+            DB.UpdateSuggestion(suggestion);
             await Context.Interaction.Message.ModifyAsync(x => x.Embed = embed.Build());
             await RespondAsync("Upvoted Suggestion!", ephemeral: true);
         }
@@ -273,16 +273,20 @@ namespace PixelPerfectBot.Core.Interactions
         [ComponentInteraction("DownvoteSuggestion")]
         public async Task DownvoteSuggestion()
         {
-            if (Context.Interaction.Message.Embeds.First().Fields[0].Value.Contains(Context.User.Id.ToString()) || Context.Interaction.Message.Embeds.First().Fields[1].Value.Contains(Context.User.Id.ToString()))
+            var suggestion = DB.GetSuggestion(Context.Interaction.Message.Id);
+            if (suggestion.UserIds.Exists(x => x == Context.User.Id))
             {
                 await RespondAsync("You have already voted on this suggestion!", ephemeral: true);
                 return;
             }
+            suggestion.UserIds.Add(Context.User.Id);
+            suggestion.UpvotesDownvotes -= 1;
+            DB.UpdateSuggestion(suggestion);
+
             var embed = EmbedBuilderExtensions.ToEmbedBuilder(Context.Interaction.Message.Embeds.First());
-            embed.Fields[1].Value += $"\n{Context.User.Mention}";
-            embed.Fields[1].Value = embed.Fields[1].Value.ToString().Replace("No Downvote Users", "");
-            embed.WithFooter((Convert.ToInt16(embed.Footer.Text) - 1).ToString());
+            embed.Fields.First().WithValue(suggestion.UpvotesDownvotes.ToString());
             await Context.Interaction.Message.ModifyAsync(x => x.Embed = embed.Build());
+
             await RespondAsync("Downvoted Suggestion!", ephemeral: true);
         }
     }
@@ -322,18 +326,18 @@ namespace PixelPerfectBot.Core.Interactions
             var embed = new EmbedBuilder()
                 .WithTitle(modal.SuggestionTitle)
                 .WithDescription(modal.Description)
-                .AddField("Upvotes", "No Upvote Users")
-                .AddField("Downvotes", "No Downvote Users")
+                .AddField("Upvotes - Downvotes", "0")
                 .WithColor(Color.LightOrange)
                 .WithAuthor(Context.User)
-                .WithFooter("0")
                 .WithTimestamp(DateTime.UtcNow);
             var builder = new ComponentBuilder()
                 .WithButton("Upvote", "UpvoteSuggestion", ButtonStyle.Success, Emoji.Parse("👍"))
                 .WithButton("Downvote", "DownvoteSuggestion", ButtonStyle.Danger, Emoji.Parse("👎"));
-            await channel.SendMessageAsync($"Suggestion from {Context.User.Mention}", embed: embed.Build(), components: builder.Build());
+            var msg = await channel.SendMessageAsync($"Suggestion from {Context.User.Mention}", embed: embed.Build(), components: builder.Build());
             user.SuggestionCooldown = DateTime.UtcNow.AddMinutes(15);
             DB.UpdateUser(user);
+            DB.AddSuggestion(new Database.Suggestion() { MessageId = msg.Id, UpvotesDownvotes = 0 });
+            DB.TrimFirstSuggestion();
             await RespondAsync("Successfully sent suggestion", ephemeral: true);
         }
     }
@@ -364,7 +368,7 @@ namespace PixelPerfectBot.Core.Interactions
         public string SuggestionTitle { get; set; }
 
         [InputLabel("Description of suggestion")]
-        [ModalTextInput("Description")]
+        [ModalTextInput("Description", TextInputStyle.Paragraph)]
         public string Description { get; set; }
     }
 }

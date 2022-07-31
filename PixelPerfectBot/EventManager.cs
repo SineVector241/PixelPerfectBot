@@ -53,7 +53,11 @@ namespace PixelPerfectBot
             try
             {
                 Console.WriteLine($"\u001b[97m[{DateTime.Now}]: [\u001b[92mREADY\u001b[97m] => {BotClient.CurrentUser.Username} is ready!");
+#if DEBUG
+                await BotClient.SetGameAsync("In Development Phase");
+#else
                 await BotClient.SetGameAsync("Helping Pixel Perfect Members");
+#endif
                 await BotClient.SetStatusAsync(UserStatus.Online);
                 await IService.RegisterCommandsToGuildAsync(669289013328216074);
             }

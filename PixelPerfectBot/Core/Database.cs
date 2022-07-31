@@ -73,7 +73,7 @@ namespace PixelPerfectBot.Core
 
         public void CreateUserIfNotExists(ulong Id)
         {
-            if(!DBData.Users.Exists(x => x.Id == Id))
+            if (!DBData.Users.Exists(x => x.Id == Id))
             {
                 DBData.Users.Add(new User()
                 {
@@ -92,10 +92,41 @@ namespace PixelPerfectBot.Core
             File.WriteAllText(_dbFolder + "/" + _dbFile, botConfigJson);
         }
 
+        public Suggestion? GetSuggestion(ulong MessageId)
+        {
+            return DBData.Suggestions.FirstOrDefault(x => x.MessageId == MessageId);
+        }
+
+        public void UpdateSuggestion(Suggestion suggestion)
+        {
+            var data = DBData.Suggestions.FirstOrDefault(x => x.MessageId == suggestion.MessageId);
+            data = suggestion;
+            string botConfigJson = JsonConvert.SerializeObject(DBData, Formatting.Indented);
+            File.WriteAllText(_dbFolder + "/" + _dbFile, botConfigJson);
+        }
+
+        public void AddSuggestion(Suggestion suggestion)
+        {
+            DBData.Suggestions.Add(suggestion);
+            string botConfigJson = JsonConvert.SerializeObject(DBData, Formatting.Indented);
+            File.WriteAllText(_dbFolder + "/" + _dbFile, botConfigJson);
+        }
+
+        public void TrimFirstSuggestion()
+        {
+            if (DBData.Suggestions.Count > 50)
+            {
+                DBData.Suggestions.RemoveAt(0);
+                string botConfigJson = JsonConvert.SerializeObject(DBData, Formatting.Indented);
+                File.WriteAllText(_dbFolder + "/" + _dbFile, botConfigJson);
+            }
+        }
+
         public class DatabaseData
         {
             public List<Ticket> Tickets { get; set; } = new List<Ticket>();
             public List<User> Users { get; set; } = new List<User>();
+            public List<Suggestion> Suggestions { get; set; } = new List<Suggestion>();
         }
 
         public class Ticket
@@ -103,6 +134,14 @@ namespace PixelPerfectBot.Core
             public int Type { get; set; }
             public ulong UserId { get; set; }
             public DateTime Created { get; set; } = DateTime.Now;
+        }
+
+        public class Suggestion
+        {
+            public int UpvotesDownvotes { get; set; }
+            public ulong MessageId { get; set; }
+            public List<ulong> UserIds { get; set; } = new List<ulong>();
+            public bool TopSuggestion { get; set; }
         }
 
         public class User
