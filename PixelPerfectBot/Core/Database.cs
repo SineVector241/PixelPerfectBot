@@ -122,11 +122,42 @@ namespace PixelPerfectBot.Core
             }
         }
 
+        public void TrimFirstPoll()
+        {
+            if (DBData.Polls.Count > 50)
+            {
+                DBData.Polls.RemoveAt(0);
+                string botConfigJson = JsonConvert.SerializeObject(DBData, Formatting.Indented);
+                File.WriteAllText(_dbFolder + "/" + _dbFile, botConfigJson);
+            }
+        }
+
+        public void AddPoll(Poll poll)
+        {
+            DBData.Polls.Add(poll);
+            string botConfigJson = JsonConvert.SerializeObject(DBData, Formatting.Indented);
+            File.WriteAllText(_dbFolder + "/" + _dbFile, botConfigJson);
+        }
+
+        public Poll? GetPoll(ulong MessageId)
+        {
+            return DBData.Polls.FirstOrDefault(x => x.MessageId == MessageId);
+        }
+
+        public void UpdatePoll(Poll poll)
+        {
+            var data = DBData.Polls.FirstOrDefault(x => x.MessageId == poll.MessageId);
+            data = poll;
+            string botConfigJson = JsonConvert.SerializeObject(DBData, Formatting.Indented);
+            File.WriteAllText(_dbFolder + "/" + _dbFile, botConfigJson);
+        }
+
         public class DatabaseData
         {
             public List<Ticket> Tickets { get; set; } = new List<Ticket>();
             public List<User> Users { get; set; } = new List<User>();
             public List<Suggestion> Suggestions { get; set; } = new List<Suggestion>();
+            public List<Poll> Polls { get; set; } = new List<Poll>();
         }
 
         public class Ticket
@@ -140,8 +171,15 @@ namespace PixelPerfectBot.Core
         {
             public int UpvotesDownvotes { get; set; }
             public ulong MessageId { get; set; }
-            public List<ulong> UserIds { get; set; } = new List<ulong>();
+            public List<ulong> UpvoteUserIds { get; set; } = new List<ulong>();
+            public List<ulong> DownvoteUserIds { get; set; } = new List<ulong>();
             public bool TopSuggestion { get; set; }
+        }
+
+        public class Poll
+        {
+            public ulong MessageId { get; set; }
+            public List<List<ulong>> OptionUserIds { get; set; } = new List<List<ulong>>(10);
         }
 
         public class User

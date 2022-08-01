@@ -28,7 +28,7 @@ namespace PixelPerfectBot.Core
                 .WithDescription(Description)
                 .WithTimestamp(DateTime.Now)
                 .WithColor((Color)color);
-            await guild.GetTextChannel(Config.BotConfiguration.LoggingChannel).SendMessageAsync(embed: embed.Build());
+            await guild.GetTextChannel(Config.BotConfiguration.TicketLoggingChannel).SendMessageAsync(embed: embed.Build());
         }
     }
 }

@@ -7,6 +7,7 @@ namespace PixelPerfectBot
 {
     public class EventManager
     {
+        private Core.Database DB = new Core.Database();
         private DiscordSocketClient BotClient;
         private readonly InteractionService IService;
         private readonly IServiceProvider SProvider;
@@ -22,7 +23,42 @@ namespace PixelPerfectBot
         {
             BotClient.Ready += Ready;
             BotClient.InteractionCreated += InteractionCreated;
+            BotClient.MessageReceived += MessageRecieved;
             return Task.CompletedTask;
+        }
+
+        private async Task MessageRecieved(SocketMessage msg)
+        {
+            var User = msg.Author as SocketGuildUser;
+            if (User != null && !User.IsBot)
+            {
+                DB.CreateUserIfNotExists(User.Id);
+                if (msg.Channel.Id == Config.BotConfiguration.SuggestionChannel)
+                {
+                    await msg.DeleteAsync();
+                    var user = DB.GetUser(msg.Author.Id);
+                    if (user.SuggestionCooldown > DateTime.UtcNow || user.SentContentCreator)
+                    {
+                        return;
+                    }
+                    var channel = User.Guild.GetTextChannel(Config.BotConfiguration.SuggestionChannel);
+                    var embed = new EmbedBuilder()
+                        .WithTitle("Suggestion")
+                        .WithDescription(msg.Content)
+                        .AddField("Upvotes - Downvotes", "0")
+                        .WithColor(Color.LightOrange)
+                        .WithAuthor(msg.Author)
+                        .WithTimestamp(DateTime.UtcNow);
+                    var builder = new ComponentBuilder()
+                        .WithButton("Upvote", "UpvoteSuggestion", ButtonStyle.Success, Emoji.Parse("👍"))
+                        .WithButton("Downvote", "DownvoteSuggestion", ButtonStyle.Danger, Emoji.Parse("👎"));
+                    var Message = await channel.SendMessageAsync($"Suggestion from {msg.Author.Mention}", embed: embed.Build(), components: builder.Build());
+                    user.SuggestionCooldown = DateTime.UtcNow.AddMinutes(15);
+                    DB.UpdateUser(user);
+                    DB.AddSuggestion(new Core.Database.Suggestion() { MessageId = Message.Id, UpvotesDownvotes = 0 });
+                    DB.TrimFirstSuggestion();
+                }
+            }
         }
 
         private async Task InteractionCreated(SocketInteraction interaction)

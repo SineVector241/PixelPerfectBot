@@ -166,9 +166,9 @@ namespace PixelPerfectBot.Core.Interactions
                 await RespondAsync("Accepted User", ephemeral: true);
                 await Context.Interaction.Message.ModifyAsync(x => { x.Content = $"Accepted Application: Accepted by {Context.User.Mention}"; x.Components = null; });
             }
-            catch
+            catch(Exception ex)
             {
-                await Context.Interaction.Message.ModifyAsync(x => { x.Content = "Application could not be accepted"; x.Components = null; });
+                await Context.Interaction.Message.ModifyAsync(x => { x.Content = $"Application could not be accepted\nError: {ex.Message}"; x.Components = null; });
                 await RespondAsync("Could not accept user as this user may not exist in the server.", ephemeral: true);
             }
         }
@@ -250,13 +250,22 @@ namespace PixelPerfectBot.Core.Interactions
         public async Task UpvoteSuggestion()
         {
             var suggestion = DB.GetSuggestion(Context.Interaction.Message.Id);
-            if (suggestion.UserIds.Exists(x => x == Context.User.Id))
+            if (suggestion.DownvoteUserIds.Exists(x => x == Context.User.Id))
             {
-                await RespondAsync("You have already voted on this suggestion!", ephemeral: true);
+                await RespondAsync("You have downvoted on this suggestion. Press downvote button again to upvote!", ephemeral: true);
                 return;
             }
-            suggestion.UserIds.Add(Context.User.Id);
-            suggestion.UpvotesDownvotes += 1;
+
+            if (suggestion.UpvoteUserIds.Exists(x => x == Context.User.Id))
+            {
+                suggestion.UpvoteUserIds.Remove(Context.User.Id);
+                suggestion.UpvotesDownvotes -= 1;
+            }
+            else
+            {
+                suggestion.UpvoteUserIds.Add(Context.User.Id);
+                suggestion.UpvotesDownvotes += 1;
+            }
             var embed = EmbedBuilderExtensions.ToEmbedBuilder(Context.Interaction.Message.Embeds.First());
             embed.Fields.First().WithValue(suggestion.UpvotesDownvotes.ToString());
 
@@ -267,27 +276,101 @@ namespace PixelPerfectBot.Core.Interactions
             }
             DB.UpdateSuggestion(suggestion);
             await Context.Interaction.Message.ModifyAsync(x => x.Embed = embed.Build());
-            await RespondAsync("Upvoted Suggestion!", ephemeral: true);
+            await DeferAsync();
         }
 
         [ComponentInteraction("DownvoteSuggestion")]
         public async Task DownvoteSuggestion()
         {
             var suggestion = DB.GetSuggestion(Context.Interaction.Message.Id);
-            if (suggestion.UserIds.Exists(x => x == Context.User.Id))
+            if (suggestion.UpvoteUserIds.Exists(x => x == Context.User.Id))
             {
-                await RespondAsync("You have already voted on this suggestion!", ephemeral: true);
+                await RespondAsync("You have upvoted on this suggestion. Press upvote button again to downvote!", ephemeral: true);
                 return;
             }
-            suggestion.UserIds.Add(Context.User.Id);
-            suggestion.UpvotesDownvotes -= 1;
+            if (suggestion.DownvoteUserIds.Exists(x => x == Context.User.Id))
+            {
+                suggestion.DownvoteUserIds.Remove(Context.User.Id);
+                suggestion.UpvotesDownvotes += 1;
+            }
+            else
+            {
+                suggestion.DownvoteUserIds.Add(Context.User.Id);
+                suggestion.UpvotesDownvotes -= 1;
+            }
             DB.UpdateSuggestion(suggestion);
-
             var embed = EmbedBuilderExtensions.ToEmbedBuilder(Context.Interaction.Message.Embeds.First());
             embed.Fields.First().WithValue(suggestion.UpvotesDownvotes.ToString());
             await Context.Interaction.Message.ModifyAsync(x => x.Embed = embed.Build());
+            await DeferAsync();
+        }
 
-            await RespondAsync("Downvoted Suggestion!", ephemeral: true);
+        //========================= Poll actions below =========================
+
+        [ComponentInteraction("Option:*")]
+        public async Task UpvoteOption(string Option)
+        {
+            var poll = DB.GetPoll(Context.Interaction.Message.Id);
+            var VotedOther = false;
+            var VotedNotOther = false;
+            try
+            {
+                if (poll.OptionUserIds.ElementAt(Convert.ToInt16(Option)).Contains(Context.User.Id))
+                {
+                    VotedNotOther = true;
+                }
+            }
+            catch
+            { }
+            foreach (var users in poll.OptionUserIds)
+            {
+                if (!VotedNotOther && users.Contains(Context.User.Id))
+                {
+                    users.Remove(Context.User.Id);
+                    VotedOther = true;
+                }
+            }
+            if (!VotedOther && !VotedNotOther)
+            {
+                poll.OptionUserIds.ElementAt(Convert.ToInt16(Option)).Add(Context.User.Id);
+                await RespondAsync($"Added your poll vote!", ephemeral: true);
+            }
+            else if (VotedNotOther)
+            {
+                poll.OptionUserIds.ElementAt(Convert.ToInt16(Option)).Remove(Context.User.Id);
+                await RespondAsync($"Removed your poll submission", ephemeral: true);
+            }
+            else if (VotedOther)
+            {
+                poll.OptionUserIds.ElementAt(Convert.ToInt16(Option)).Add(Context.User.Id);
+                await RespondAsync($"Moved your vote!", ephemeral: true);
+            }
+            DB.UpdatePoll(poll);
+            var builder2 = new ComponentBuilder();
+            var olderbuilder = ComponentBuilder.FromMessage(Context.Interaction.Message);
+            var rows = olderbuilder.ActionRows;
+            for (int j = 0; j < rows.Count; j++)
+            {
+                var counter = 0;
+                foreach (var component in rows[j].Components)
+                {
+                    switch (component)
+                    {
+                        case ButtonComponent button:
+                            if(Convert.ToInt16(button.Label.Replace(": ", "")) != poll.OptionUserIds.ElementAt(counter).Count)
+                            {
+                                builder2.WithButton(button.ToBuilder().WithLabel($": {poll.OptionUserIds.ElementAt(counter).Count.ToString()}"), j);
+                            }
+                            else
+                            {
+                                builder2.WithButton(button.ToBuilder(), j);
+                            }
+                            break;
+                    }
+                    counter++;
+                }
+            }
+            await Context.Interaction.Message.ModifyAsync(x => x.Components = builder2.Build());
         }
     }
 

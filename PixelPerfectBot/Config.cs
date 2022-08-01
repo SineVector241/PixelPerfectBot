@@ -35,6 +35,12 @@ namespace PixelPerfectBot
             }
         }
 
+        public void UpdateConfig()
+        {
+            string botConfigJson = JsonConvert.SerializeObject(BotConfiguration, Formatting.Indented);
+            File.WriteAllText(_configFolder + "/" + _configFile, botConfigJson);
+        }
+
         public struct BotConfig
         {
             public string Token { get; set; }
@@ -42,10 +48,11 @@ namespace PixelPerfectBot
             public ulong ContentSupportCategory { get; set; }
             public ulong MCBEServerSupportCategory { get; set; }
             public ulong ApplicationChannel { get; set; }
-            public ulong LoggingChannel { get; set; }
+            public ulong TicketLoggingChannel { get; set; }
             public ulong VIPApplicationChannel { get; set; }
             public ulong SuggestionChannel { get; set; }
             public ulong TopSuggestionChannel { get; set; }
+            public ulong PollChannel { get; set; }
 
             public ulong ContentCreatorRoleId { get; set; }
             public ulong ChatModRoleId { get; set; }
