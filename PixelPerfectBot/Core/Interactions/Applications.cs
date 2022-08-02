@@ -349,9 +349,9 @@ namespace PixelPerfectBot.Core.Interactions
             var builder2 = new ComponentBuilder();
             var olderbuilder = ComponentBuilder.FromMessage(Context.Interaction.Message);
             var rows = olderbuilder.ActionRows;
+            var counter = 0;
             for (int j = 0; j < rows.Count; j++)
             {
-                var counter = 0;
                 foreach (var component in rows[j].Components)
                 {
                     switch (component)
@@ -359,7 +359,7 @@ namespace PixelPerfectBot.Core.Interactions
                         case ButtonComponent button:
                             if(Convert.ToInt16(button.Label.Replace(": ", "")) != poll.OptionUserIds.ElementAt(counter).Count)
                             {
-                                builder2.WithButton(button.ToBuilder().WithLabel($": {poll.OptionUserIds.ElementAt(counter).Count.ToString()}"), j);
+                                builder2.WithButton(button.ToBuilder().WithLabel($": {poll.OptionUserIds.ElementAt(counter).Count}"), j);
                             }
                             else
                             {
