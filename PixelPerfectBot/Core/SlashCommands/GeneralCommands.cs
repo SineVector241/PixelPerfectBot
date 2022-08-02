@@ -27,6 +27,7 @@ namespace PixelPerfectBot.Core.SlashCommands
         {
             try
             {
+                await RespondAsync("Coming soon", ephemeral: true);
             }
             catch (Exception ex)
             {
