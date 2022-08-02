@@ -62,6 +62,53 @@ namespace PixelPerfectBot.Core.SlashCommands
     {
         private Database DB = new Database();
 
+        [SlashCommand("serverinfo", "Displays server information")]
+        public async Task ServerInformation()
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle($"Server Information: {Context.Guild.Name}")
+                .AddField("Created At", $"{Context.Guild.CreatedAt.DateTime.ToLongDateString()} {Context.Guild.CreatedAt.DateTime.ToLongTimeString()}")
+                .AddField("Members", $"{Context.Guild.MemberCount}/{Context.Guild.MaxMembers}")
+                .AddField("Categories", Context.Guild.CategoryChannels.Count)
+                .AddField("Text Channels", Context.Guild.TextChannels.Count)
+                .AddField("Voice Channels", Context.Guild.VoiceChannels.Count)
+                .AddField("Stage Channels", Context.Guild.StageChannels.Count)
+                .AddField("Roles", Context.Guild.Roles.Count)
+                .AddField("Emotes", Context.Guild.Emotes.Count)
+                .AddField("Features", Context.Guild.Features.Value)
+                .WithThumbnailUrl(Context.Guild.IconUrl)
+                .WithAuthor(Context.User)
+                .WithColor(Color.Blue);
+            await RespondAsync(embed: embed.Build());
+        }
+
+        [SlashCommand("userinfo", "Displays the selected user information")]
+        public async Task UserInformation(SocketGuildUser? User = null)
+        {
+            try
+            {
+                if (User == null)
+                    User = Context.User as SocketGuildUser;
+                var embed = new EmbedBuilder()
+                    .WithTitle($"User Information: {User.Username}")
+                    .AddField("Display Name", User.DisplayName)
+                    .AddField("Discriminator", User.Discriminator)
+                    .AddField("Created At", $"{User.CreatedAt.DateTime.ToLongDateString()} {User.CreatedAt.DateTime.ToLongTimeString()}")
+                    .AddField("Joined At", $"{User.JoinedAt.Value.DateTime.ToLongDateString()} {User.JoinedAt.Value.DateTime.ToLongTimeString()}")
+                    .AddField("Permissions", 
+                    $"**Administrator:** {User.GuildPermissions.Administrator}\n**Manage Messages:** {User.GuildPermissions.ManageMessages}\n**Manage Channels:** {User.GuildPermissions.ManageChannels}\n**Manage Roles:** {User.GuildPermissions.ManageRoles}\n**Manage Emojis/Stickers:** {User.GuildPermissions.ManageEmojisAndStickers}\n**Manage Events:** {User.GuildPermissions.ManageEvents}".Replace("True", "✅").Replace("False", "❎"))
+                    .AddField("Bot", User.IsBot)
+                    .WithThumbnailUrl(User.GetAvatarUrl())
+                    .WithAuthor(Context.User)
+                    .WithColor(Color.Blue);
+                await RespondAsync(embed: embed.Build());
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
+        }
+
         [SlashCommand("sendembed", "Sends a quick embed. Use \\n to create a new line")]
         public async Task SendEmbed(string Title, string Description, SocketTextChannel? channel = null)
         {

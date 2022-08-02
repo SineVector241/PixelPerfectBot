@@ -11,6 +11,7 @@
     <PackageReference Include="Discord.Net" Version="3.7.2" />
     <PackageReference Include="Fergun.Interactive" Version="1.6.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
+    <PackageReference Include="RakDotNet" Version="0.0.16-beta" />
   </ItemGroup>
 
 </Project>
