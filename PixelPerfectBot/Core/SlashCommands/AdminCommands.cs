@@ -95,7 +95,7 @@ namespace PixelPerfectBot.Core.SlashCommands
                     .AddField("Discriminator", User.Discriminator)
                     .AddField("Created At", $"{User.CreatedAt.DateTime.ToLongDateString()} {User.CreatedAt.DateTime.ToLongTimeString()}")
                     .AddField("Joined At", $"{User.JoinedAt.Value.DateTime.ToLongDateString()} {User.JoinedAt.Value.DateTime.ToLongTimeString()}")
-                    .AddField("Permissions", 
+                    .AddField("Permissions",
                     $"**Administrator:** {User.GuildPermissions.Administrator}\n**Manage Messages:** {User.GuildPermissions.ManageMessages}\n**Manage Channels:** {User.GuildPermissions.ManageChannels}\n**Manage Roles:** {User.GuildPermissions.ManageRoles}\n**Manage Emojis/Stickers:** {User.GuildPermissions.ManageEmojisAndStickers}\n**Manage Events:** {User.GuildPermissions.ManageEvents}".Replace("True", "✅").Replace("False", "❎"))
                     .AddField("Bot", User.IsBot)
                     .WithThumbnailUrl(User.GetAvatarUrl())
@@ -103,31 +103,19 @@ namespace PixelPerfectBot.Core.SlashCommands
                     .WithColor(Color.Blue);
                 await RespondAsync(embed: embed.Build());
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Console.WriteLine(ex);
             }
         }
 
-        [SlashCommand("sendembed", "Sends a quick embed. Use \\n to create a new line")]
-        public async Task SendEmbed(string Title, string Description, SocketTextChannel? channel = null)
+        [SlashCommand("embed", "Sends a quick embed")]
+        public async Task SendEmbed(SocketTextChannel? channel = null)
         {
-            await DeferAsync();
-            var embed = new EmbedBuilder()
-                .WithTitle(Title)
-                .WithDescription(Description)
-                .WithTimestamp(DateTime.UtcNow)
-                .WithColor(Color.Green);
             if (channel == null)
-            {
-                await Context.Channel.SendMessageAsync(embed: embed.Build());
-                await FollowupAsync("Sent Embed");
-            }
+                await RespondWithModalAsync<EmbedSendModal>("SendEmbed");
             else
-            {
-                await channel.SendMessageAsync(embed: embed.Build());
-                await FollowupAsync("Sent Embed");
-            }
+                await RespondWithModalAsync<EmbedSendModal>("SendEmbed");
         }
 
         [SlashCommand("sendsupportembed", "Sends the support embed with buttons")]
@@ -352,5 +340,18 @@ namespace PixelPerfectBot.Core.SlashCommands
                 await FollowupAsync($"Error: {ex.Message}", ephemeral: true);
             }
         }
+    }
+
+    public class EmbedSendModal : IModal
+    {
+        public string Title => "Embed";
+
+        [InputLabel("Title of embed")]
+        [ModalTextInput("Title")]
+        public string ETitle { get; set; }
+
+        [InputLabel("Description")]
+        [ModalTextInput("Description", TextInputStyle.Paragraph)]
+        public string Description { get; set; }
     }
 }

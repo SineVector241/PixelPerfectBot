@@ -378,6 +378,19 @@ namespace PixelPerfectBot.Core.Interactions
     {
         private Database DB = new Database();
 
+        [ModalInteraction("SendEmbed")]
+        public async Task SendEmbed(SlashCommands.EmbedSendModal modal)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle(modal.ETitle)
+                .WithDescription(modal.Description)
+                .WithAuthor(Context.User)
+                .WithColor(Color.Green)
+                .WithCurrentTimestamp();
+            await Context.Channel.SendMessageAsync(embed: embed.Build());
+            await RespondAsync("Successfully sent embed", ephemeral: true);
+        }
+
         [ModalInteraction("VIPApplication")]
         public async Task SubmitVIPApplication(VIPRoleApplication modal)
         {
