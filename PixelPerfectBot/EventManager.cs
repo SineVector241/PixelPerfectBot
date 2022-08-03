@@ -24,7 +24,20 @@ namespace PixelPerfectBot
             BotClient.Ready += Ready;
             BotClient.InteractionCreated += InteractionCreated;
             BotClient.MessageReceived += MessageRecieved;
+            IService.InteractionExecuted += InteractionExecuted;
             return Task.CompletedTask;
+        }
+
+        private async Task InteractionExecuted(ICommandInfo arg1, IInteractionContext arg2, IResult arg3)
+        {
+            if(arg2.Interaction.HasResponded && !arg3.IsSuccess)
+            {
+                await arg2.Interaction.FollowupAsync($"An error occured: {arg3.ErrorReason}");
+            }
+            else if(!arg3.IsSuccess)
+            {
+                await arg2.Interaction.RespondAsync($"An error occured: {arg3.ErrorReason}");
+            }
         }
 
         private async Task MessageRecieved(SocketMessage msg)

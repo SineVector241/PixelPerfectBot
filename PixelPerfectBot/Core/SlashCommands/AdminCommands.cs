@@ -10,7 +10,7 @@ namespace PixelPerfectBot.Core.SlashCommands
     {
         private Database DB = new Database();
 
-        [SlashCommand("deletemsg", "Deletes a message in a channel")]
+        [SlashCommand("delete-msg", "Deletes a message in a channel")]
         public async Task DeleteMessage(string MsgId, SocketTextChannel channel)
         {
             await DeferAsync();
@@ -20,7 +20,7 @@ namespace PixelPerfectBot.Core.SlashCommands
             await FollowupAsync("Deleted Message");
         }
 
-        [SlashCommand("emojiinfo", "Emoji Information")]
+        [SlashCommand("emoji-info", "Emoji Information")]
         public async Task EmojiInfo(string emoji)
         {
             await DeferAsync();
@@ -28,7 +28,7 @@ namespace PixelPerfectBot.Core.SlashCommands
             await FollowupAsync(emote.Id.ToString());
         }
 
-        [SlashCommand("sendmessage", "Sends a message in a specific channel")]
+        [SlashCommand("send-message", "Sends a message in a specific channel")]
         public async Task SendMessage(string Message, SocketTextChannel? channel = null)
         {
             try
@@ -98,6 +98,7 @@ namespace PixelPerfectBot.Core.SlashCommands
                     .AddField("Permissions",
                     $"**Administrator:** {User.GuildPermissions.Administrator}\n**Manage Messages:** {User.GuildPermissions.ManageMessages}\n**Manage Channels:** {User.GuildPermissions.ManageChannels}\n**Manage Roles:** {User.GuildPermissions.ManageRoles}\n**Manage Emojis/Stickers:** {User.GuildPermissions.ManageEmojisAndStickers}\n**Manage Events:** {User.GuildPermissions.ManageEvents}".Replace("True", "✅").Replace("False", "❎"))
                     .AddField("Bot", User.IsBot)
+                    .AddField("Flags", User.PublicFlags)
                     .WithThumbnailUrl(User.GetAvatarUrl())
                     .WithAuthor(Context.User)
                     .WithColor(Color.Blue);
@@ -118,7 +119,51 @@ namespace PixelPerfectBot.Core.SlashCommands
                 await RespondWithModalAsync<EmbedSendModal>("SendEmbed");
         }
 
-        [SlashCommand("sendsupportembed", "Sends the support embed with buttons")]
+        [SlashCommand("send-color-role-embed", "Sends the color role embed in the specified channel")]
+        public async Task SendColorRoleEmbed(SocketTextChannel channel)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("Color Role Settings")
+                .WithDescription("Color Roles")
+                .AddField("Blue", $"<@&{Config.BotConfiguration.ColorRoles.Blue}>")
+                .AddField("Gold", $"<@&{Config.BotConfiguration.ColorRoles.Gold}>")
+                .AddField("Green", $"<@&{Config.BotConfiguration.ColorRoles.Green}>")
+                .AddField("Magenta", $"<@&{Config.BotConfiguration.ColorRoles.Magenta}>")
+                .AddField("Orange", $"<@&{Config.BotConfiguration.ColorRoles.Orange}>")
+                .AddField("Purple", $"<@&{Config.BotConfiguration.ColorRoles.Purple}>")
+                .AddField("Red", $"<@&{Config.BotConfiguration.ColorRoles.Red}>")
+                .AddField("Teal", $"<@&{Config.BotConfiguration.ColorRoles.Teal}>")
+                .AddField("Dark Blue", $"<@&{Config.BotConfiguration.ColorRoles.DarkBlue}>")
+                .AddField("Dark Green", $"<@&{Config.BotConfiguration.ColorRoles.DarkGreen}>")
+                .AddField("Dark Magenta", $"<@&{Config.BotConfiguration.ColorRoles.DarkMagenta}>")
+                .AddField("Dark Orange", $"<@&{Config.BotConfiguration.ColorRoles.DarkOrange}>")
+                .AddField("Dark Purple", $"<@&{Config.BotConfiguration.ColorRoles.DarkPurple}>")
+                .AddField("Dark Red", $"<@&{Config.BotConfiguration.ColorRoles.DarkRed}>")
+                .AddField("Dark Teal", $"<@&{Config.BotConfiguration.ColorRoles.DarkTeal}>")
+                .AddField("Light Orange", $"<@&{Config.BotConfiguration.ColorRoles.LightOrange}>")
+                .WithColor(Color.Orange);
+            var builder = new ComponentBuilder()
+                .WithButton("Blue", "SelectColorRole:0")
+                .WithButton("Gold", "SelectColorRole:1")
+                .WithButton("Green", "SelectColorRole:2")
+                .WithButton("Magenta", "SelectColorRole:3")
+                .WithButton("Orange", "SelectColorRole:4")
+                .WithButton("Purple", "SelectColorRole:5")
+                .WithButton("Red", "SelectColorRole:6")
+                .WithButton("Teal", "SelectColorRole:7")
+                .WithButton("Dark Blue", "SelectColorRole:8")
+                .WithButton("Dark Green", "SelectColorRole:9")
+                .WithButton("Dark Magenta", "SelectColorRole:10")
+                .WithButton("Dark Orange", "SelectColorRole:11")
+                .WithButton("Dark Purple", "SelectColorRole:12")
+                .WithButton("Dark Red", "SelectColorRole:13")
+                .WithButton("Dark Teal", "SelectColorRole:14")
+                .WithButton("Light Orange", "SelectColorRole:15");
+            await channel.SendMessageAsync(embed: embed.Build(), components: builder.Build());
+            await RespondAsync("Successfully sent");
+        }
+
+        [SlashCommand("send-support-embed", "Sends the support embed with buttons")]
         public async Task SendSupportEmbed(SocketTextChannel channel)
         {
             try
@@ -178,26 +223,55 @@ namespace PixelPerfectBot.Core.SlashCommands
             }
 
             [SlashCommand("view", "View settings of the bot")]
-            public async Task ViewSettings()
+            public async Task ViewSettings([Choice("General Settings", 0), Choice("Color Roles", 1)] int type)
             {
-                var embed = new EmbedBuilder()
-                    .WithTitle("Bot Settings")
-                    .WithDescription("**@deleted-role = Not Set/Configured/Removed**\n**#deleted-channel = Not Set/Configured/Removed**")
-                    .AddField("General Support Category", $"<#{Config.BotConfiguration.GeneralSupportCategory}>")
-                    .AddField("Content Support Category", $"<#{Config.BotConfiguration.ContentSupportCategory}>")
-                    .AddField("MCBEServer Support Category", $"<#{Config.BotConfiguration.MCBEServerSupportCategory}>")
-                    .AddField("Application Channel", $"<#{Config.BotConfiguration.ApplicationChannel}>")
-                    .AddField("Ticket Logging Channel", $"<#{Config.BotConfiguration.TicketLoggingChannel}>")
-                    .AddField("VIP Application Channel", $"<#{Config.BotConfiguration.VIPApplicationChannel}>")
-                    .AddField("Suggestion Channel", $"<#{Config.BotConfiguration.SuggestionChannel}>")
-                    .AddField("Top Suggestion Channel", $"<#{Config.BotConfiguration.TopSuggestionChannel}>")
-                    .AddField("Poll Channel", $"<#{Config.BotConfiguration.PollChannel}>")
-                    .AddField("Content Creator Role", $"<@&{Config.BotConfiguration.ContentCreatorRoleId}>")
-                    .AddField("Chat Mod Role", $"<@&{Config.BotConfiguration.ChatModRoleId}>")
-                    .AddField("Ticket Manager Role", $"<@&{Config.BotConfiguration.TicketManagerRoleId}>")
-                    .AddField("VIP Role", $"<@&{Config.BotConfiguration.VIPRoleId}>")
-                    .WithColor(Color.Orange);
-                await RespondAsync(embed: embed.Build());
+                switch (type)
+                {
+                    case 0:
+                        var general = new EmbedBuilder()
+                            .WithTitle("Bot Settings")
+                            .WithDescription("**@deleted-role = Not Set/Configured/Removed**\n**#deleted-channel = Not Set/Configured/Removed**")
+                            .AddField("General Support Category", $"<#{Config.BotConfiguration.GeneralSupportCategory}>")
+                            .AddField("Content Support Category", $"<#{Config.BotConfiguration.ContentSupportCategory}>")
+                            .AddField("MCBEServer Support Category", $"<#{Config.BotConfiguration.MCBEServerSupportCategory}>")
+                            .AddField("Application Channel", $"<#{Config.BotConfiguration.ApplicationChannel}>")
+                            .AddField("Ticket Logging Channel", $"<#{Config.BotConfiguration.TicketLoggingChannel}>")
+                            .AddField("VIP Application Channel", $"<#{Config.BotConfiguration.VIPApplicationChannel}>")
+                            .AddField("Suggestion Channel", $"<#{Config.BotConfiguration.SuggestionChannel}>")
+                            .AddField("Top Suggestion Channel", $"<#{Config.BotConfiguration.TopSuggestionChannel}>")
+                            .AddField("Poll Channel", $"<#{Config.BotConfiguration.PollChannel}>")
+                            .AddField("Content Creator Role", $"<@&{Config.BotConfiguration.ContentCreatorRoleId}>")
+                            .AddField("Chat Mod Role", $"<@&{Config.BotConfiguration.ChatModRoleId}>")
+                            .AddField("Ticket Manager Role", $"<@&{Config.BotConfiguration.TicketManagerRoleId}>")
+                            .AddField("VIP Role", $"<@&{Config.BotConfiguration.VIPRoleId}>")
+                            .AddField("Server Booster Role", $"<@&{Config.BotConfiguration.BoosterRoleId}>")
+                            .WithColor(Color.Orange);
+                        await RespondAsync(embed: general.Build());
+                        break;
+                    case 1:
+                        var colorrole = new EmbedBuilder()
+                            .WithTitle("Color Role Settings")
+                            .WithDescription("**@deleted-role = Not Set/Configured/Removed**")
+                            .AddField("Blue", $"<@&{Config.BotConfiguration.ColorRoles.Blue}>")
+                            .AddField("Gold", $"<@&{Config.BotConfiguration.ColorRoles.Gold}>")
+                            .AddField("Green", $"<@&{Config.BotConfiguration.ColorRoles.Green}>")
+                            .AddField("Magenta", $"<@&{Config.BotConfiguration.ColorRoles.Magenta}>")
+                            .AddField("Orange", $"<@&{Config.BotConfiguration.ColorRoles.Orange}>")
+                            .AddField("Purple", $"<@&{Config.BotConfiguration.ColorRoles.Purple}>")
+                            .AddField("Red", $"<@&{Config.BotConfiguration.ColorRoles.Red}>")
+                            .AddField("Teal", $"<@&{Config.BotConfiguration.ColorRoles.Teal}>")
+                            .AddField("Dark Blue", $"<@&{Config.BotConfiguration.ColorRoles.DarkBlue}>")
+                            .AddField("Dark Green", $"<@&{Config.BotConfiguration.ColorRoles.DarkGreen}>")
+                            .AddField("Dark Magenta", $"<@&{Config.BotConfiguration.ColorRoles.DarkMagenta}>")
+                            .AddField("Dark Orange", $"<@&{Config.BotConfiguration.ColorRoles.DarkOrange}>")
+                            .AddField("Dark Purple", $"<@&{Config.BotConfiguration.ColorRoles.DarkPurple}>")
+                            .AddField("Dark Red", $"<@&{Config.BotConfiguration.ColorRoles.DarkRed}>")
+                            .AddField("Dark Teal", $"<@&{Config.BotConfiguration.ColorRoles.DarkTeal}>")
+                            .AddField("Light Orange", $"<@&{Config.BotConfiguration.ColorRoles.LightOrange}>")
+                            .WithColor(Color.Orange);
+                        await RespondAsync(embed: colorrole.Build());
+                        break;
+                }
             }
 
             [SlashCommand("set-channel-setting", "Sets a channel setting in the bots configuration")]
@@ -229,7 +303,7 @@ namespace PixelPerfectBot.Core.SlashCommands
             }
 
             [SlashCommand("set-role-setting", "Sets a role setting in the bots configuration")]
-            public async Task SetRoleSetting([Choice("ContentCreatorRole", 0), Choice("ChatModRole", 1), Choice("TicketManagerRole", 2), Choice("VIPRole", 3)] int Setting, SocketRole Role)
+            public async Task SetRoleSetting([Choice("ContentCreatorRole", 0), Choice("ChatModRole", 1), Choice("TicketManagerRole", 2), Choice("VIPRole", 3), Choice("BoosterRole", 4)] int Setting, SocketRole Role)
             {
                 switch (Setting)
                 {
@@ -244,6 +318,84 @@ namespace PixelPerfectBot.Core.SlashCommands
                         break;
                     case 3:
                         Config.BotConfiguration.VIPRoleId = Role.Id;
+                        break;
+                    case 4:
+                        Config.BotConfiguration.BoosterRoleId = Role.Id;
+                        break;
+                }
+                config.UpdateConfig();
+                await RespondAsync("Successfully set setting", ephemeral: true);
+            }
+
+            [SlashCommand("set-color-role-setting", "Sets a color role setting in the bots configuration")]
+            public async Task SetColorRoleSetting([
+                Choice("Blue", 0),
+                Choice("Gold", 1),
+                Choice("Green", 2),
+                Choice("Magenta", 3),
+                Choice("Orange", 4),
+                Choice("Purple", 5),
+                Choice("Red", 6),
+                Choice("Teal", 7),
+                Choice("Dark Blue", 8),
+                Choice("Dark Green", 9),
+                Choice("Dark Magenta", 10),
+                Choice("Dark Orange", 11),
+                Choice("Dark Purple", 12),
+                Choice("Dark Red", 13),
+                Choice("Dark Teal", 14),
+                Choice("Light Orange", 15),]
+            int ColorRole, SocketRole Role)
+            {
+                switch(ColorRole)
+                {
+                    case 0:
+                        Config.BotConfiguration.ColorRoles.Blue = Role.Id;
+                        break;
+                    case 1:
+                        Config.BotConfiguration.ColorRoles.Gold = Role.Id;
+                        break;
+                    case 2:
+                        Config.BotConfiguration.ColorRoles.Green = Role.Id;
+                        break;
+                    case 3:
+                        Config.BotConfiguration.ColorRoles.Magenta = Role.Id;
+                        break;
+                    case 4:
+                        Config.BotConfiguration.ColorRoles.Orange = Role.Id;
+                        break;
+                    case 5:
+                        Config.BotConfiguration.ColorRoles.Purple = Role.Id;
+                        break;
+                    case 6:
+                        Config.BotConfiguration.ColorRoles.Red = Role.Id;
+                        break;
+                    case 7:
+                        Config.BotConfiguration.ColorRoles.Teal = Role.Id;
+                        break;
+                    case 8:
+                        Config.BotConfiguration.ColorRoles.DarkBlue = Role.Id;
+                        break;
+                    case 9:
+                        Config.BotConfiguration.ColorRoles.DarkGreen = Role.Id;
+                        break;
+                    case 10:
+                        Config.BotConfiguration.ColorRoles.DarkMagenta = Role.Id;
+                        break;
+                    case 11:
+                        Config.BotConfiguration.ColorRoles.DarkOrange = Role.Id;
+                        break;
+                    case 12:
+                        Config.BotConfiguration.ColorRoles.DarkPurple = Role.Id;
+                        break;
+                    case 13:
+                        Config.BotConfiguration.ColorRoles.DarkRed = Role.Id;
+                        break;
+                    case 14:
+                        Config.BotConfiguration.ColorRoles.DarkTeal = Role.Id;
+                        break;
+                    case 15:
+                        Config.BotConfiguration.ColorRoles.LightOrange = Role.Id;
                         break;
                 }
                 config.UpdateConfig();

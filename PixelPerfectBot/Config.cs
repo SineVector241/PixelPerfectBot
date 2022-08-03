@@ -58,6 +58,31 @@ namespace PixelPerfectBot
             public ulong ChatModRoleId { get; set; }
             public ulong TicketManagerRoleId { get; set; }
             public ulong VIPRoleId { get; set; }
+            public ulong BoosterRoleId { get; set; }
+
+            public ColorRoles ColorRoles { get; set; }
+        }
+
+        public class ColorRoles
+        {
+            public ulong Blue { get; set; }
+            public ulong Gold { get; set; }
+            public ulong Green { get; set; }
+            public ulong Magenta { get; set; }
+            public ulong Orange { get; set; }
+            public ulong Purple { get; set; }
+            public ulong Red { get; set; }
+            public ulong Teal { get; set; }
+
+            public ulong DarkBlue { get; set; }
+            public ulong DarkGreen { get; set; }
+            public ulong DarkMagenta { get; set; }
+            public ulong DarkOrange { get; set; }
+            public ulong DarkPurple { get; set; }
+            public ulong DarkRed { get; set; }
+            public ulong DarkTeal { get; set; }
+
+            public ulong LightOrange { get; set; }
         }
     }
 }
