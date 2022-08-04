@@ -195,6 +195,15 @@ namespace PixelPerfectBot.Core.SlashCommands
             }
         }
 
+        [SlashCommand("accept-application", "Accepts a user into the content team")]
+        [RequireUserPermission(GuildPermission.Administrator)]
+        public async Task AcceptUserToContent(SocketGuildUser user)
+        {
+            await user.SendMessageAsync("**Your application has been successful!** 💜\n\nWelcome to the community as a Pixel Perfect Content Creator! Please refer the the links below for further information. 😄\nPost Guidelines\nhttps://pixelsperfect.net/post-guidelines\nAbout Us\nhttps://pixelsperfect.net/about-us\nPrivate Discord\nhttps://discord.gg/cHc7DsEgHh\n\nPlease note: as a content creator you are required to join our private discord server and abide by our post guidelines. — Thank you! <:PixelPlay:998441350691307520>");
+            await user.AddRoleAsync(Config.BotConfiguration.ContentCreatorRoleId);
+            await RespondAsync("Accepted/Added user to content moderation team!");
+        }
+
         [Group("settings", "Configure Settings")]
         public class Settings : InteractionModuleBase<SocketInteractionContext<SocketInteraction>>
         {

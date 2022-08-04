@@ -168,7 +168,7 @@ namespace PixelPerfectBot.Core.Interactions
             }
             catch(Exception ex)
             {
-                await Context.Interaction.Message.ModifyAsync(x => { x.Content = $"Application could not be accepted\nError: {ex.Message}"; x.Components = null; });
+                await Context.Interaction.Message.ModifyAsync(x => { x.Content = $"Application could not be accepted\nError: {ex.Message}";});
                 await RespondAsync("Could not accept user as this user may not exist in the server.", ephemeral: true);
             }
         }

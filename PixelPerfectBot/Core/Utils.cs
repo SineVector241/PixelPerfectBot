@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using Discord.WebSocket;
 using Discord;
+using System.Reflection;
 
 namespace PixelPerfectBot.Core
 {
@@ -18,7 +19,7 @@ namespace PixelPerfectBot.Core
 
         public async Task DiscordLog(SocketGuild guild, string Title, string Description, Color? color = null)
         {
-            if(color == null)
+            if (color == null)
             {
                 color = Color.DarkGrey;
             }
