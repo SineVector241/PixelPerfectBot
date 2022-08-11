@@ -13,6 +13,10 @@ namespace PixelPerfectBot.Core.Interactions
         [ComponentInteraction("VIP")]
         public async Task ClaimVIP()
         {
+#if DEBUG
+            await RespondAsync("BOT IS IN DEV MODE. This is currently disabled!", ephemeral: true);
+            return;
+#endif
             var user = DB.GetUser(Context.User.Id);
             var guilduser = Context.User as SocketGuildUser;
             if (user.ClaimVIPCooldown > DateTime.UtcNow || user.SentClaimVIP || guilduser.Roles.FirstOrDefault(x => x.Id == Config.BotConfiguration.VIPRoleId) != null)
@@ -23,21 +27,13 @@ namespace PixelPerfectBot.Core.Interactions
             await RespondWithModalAsync<VIPRoleApplication>("VIPApplication");
         }
 
-        [ComponentInteraction("Suggest")]
-        public async Task SendSuggestModal()
-        {
-            var user = DB.GetUser(Context.User.Id);
-            if (user.SuggestionCooldown > DateTime.UtcNow)
-            {
-                await RespondAsync($"You are on cooldown for this. Please try again <t:{DateTimeOffset.FromFileTime(user.SuggestionCooldown.ToFileTime()).ToUnixTimeSeconds()}:R>", ephemeral: true);
-                return;
-            }
-            await RespondWithModalAsync<SuggestionApplication>("SubmitSuggestion");
-        }
-
         [ComponentInteraction("ContentCreator")]
         public async Task ContentCreatorApplication()
         {
+#if DEBUG
+            await RespondAsync("BOT IS IN DEV MODE. This is currently disabled!", ephemeral: true);
+            return;
+#endif
             try
             {
                 var user = DB.GetUser(Context.User.Id);
@@ -90,6 +86,10 @@ namespace PixelPerfectBot.Core.Interactions
         [ComponentInteraction("AnswerCCQuestion")]
         public async Task AnswerContentCreateQuestion(string[] Q)
         {
+#if DEBUG
+            await RespondAsync("BOT IS IN DEV MODE. This is currently disabled!", ephemeral: true);
+            return;
+#endif
             await DeferAsync();
             var embed = Context.Interaction.Message.Embeds.First().ToEmbedBuilder();
             foreach (var field in embed.Fields)
@@ -115,6 +115,10 @@ namespace PixelPerfectBot.Core.Interactions
         [ComponentInteraction("SubmitCCApplication:*")]
         public async Task SubmitCCApp(string GuildId)
         {
+#if DEBUG
+            await RespondAsync("BOT IS IN DEV MODE. This is currently disabled!", ephemeral: true);
+            return;
+#endif
             var user = DB.GetUser(Context.User.Id);
             if (user.ContentCreatorCooldown > DateTime.UtcNow || user.SentContentCreator)
             {
@@ -149,6 +153,10 @@ namespace PixelPerfectBot.Core.Interactions
         [ComponentInteraction("AcceptCCApp:*")]
         public async Task AcceptCCApp(string UserId)
         {
+#if DEBUG
+            await RespondAsync("BOT IS IN DEV MODE. This is currently disabled!", ephemeral: true);
+            return;
+#endif
             try
             {
                 var user = Context.Guild.GetUser(Convert.ToUInt64(UserId));
@@ -176,6 +184,10 @@ namespace PixelPerfectBot.Core.Interactions
         [ComponentInteraction("DenyCCApp:*")]
         public async Task DenyCCApp(string UserId)
         {
+#if DEBUG
+            await RespondAsync("BOT IS IN DEV MODE. This is currently disabled!", ephemeral: true);
+            return;
+#endif
             try
             {
                 var user = Context.Guild.GetUser(Convert.ToUInt64(UserId));
@@ -196,6 +208,10 @@ namespace PixelPerfectBot.Core.Interactions
         [ComponentInteraction("AcceptVIPApp:*")]
         public async Task AcceptVIPApplication(string UserId)
         {
+#if DEBUG
+            await RespondAsync("BOT IS IN DEV MODE. This is currently disabled!", ephemeral: true);
+            return;
+#endif
             var UserData = DB.GetUser(Context.User.Id);
             try
             {
@@ -227,6 +243,10 @@ namespace PixelPerfectBot.Core.Interactions
         [ComponentInteraction("DenyVIPApp:*")]
         public async Task DenyVIPApp(string UserId)
         {
+#if DEBUG
+            await RespondAsync("BOT IS IN DEV MODE. This is currently disabled!", ephemeral: true);
+            return;
+#endif
             try
             {
                 var user = Context.Guild.GetUser(Convert.ToUInt64(UserId));
@@ -249,6 +269,10 @@ namespace PixelPerfectBot.Core.Interactions
         [ComponentInteraction("UpvoteSuggestion")]
         public async Task UpvoteSuggestion()
         {
+#if DEBUG
+            await RespondAsync("BOT IS IN DEV MODE. This is currently disabled!", ephemeral: true);
+            return;
+#endif
             var suggestion = DB.GetSuggestion(Context.Interaction.Message.Id);
             if (suggestion.DownvoteUserIds.Exists(x => x == Context.User.Id))
             {
@@ -282,6 +306,10 @@ namespace PixelPerfectBot.Core.Interactions
         [ComponentInteraction("DownvoteSuggestion")]
         public async Task DownvoteSuggestion()
         {
+#if DEBUG
+            await RespondAsync("BOT IS IN DEV MODE. This is currently disabled!", ephemeral: true);
+            return;
+#endif
             var suggestion = DB.GetSuggestion(Context.Interaction.Message.Id);
             if (suggestion.UpvoteUserIds.Exists(x => x == Context.User.Id))
             {
@@ -310,6 +338,10 @@ namespace PixelPerfectBot.Core.Interactions
         [ComponentInteraction("Option:*")]
         public async Task UpvoteOption(string Option)
         {
+#if DEBUG
+            await RespondAsync("BOT IS IN DEV MODE. This is currently disabled!", ephemeral: true);
+            return;
+#endif
             var poll = DB.GetPoll(Context.Interaction.Message.Id);
             var VotedOther = false;
             var VotedNotOther = false;

@@ -10,6 +10,15 @@ namespace PixelPerfectBot.Core.SlashCommands
     {
         private Database DB = new Database();
 
+        [SlashCommand("add-molang-doc", "Adds a new molang doc to the moland documentation")]
+        public async Task AddMolangDoc(string FunctionName, string Description)
+        {
+            await DeferAsync();
+            Database.MCDocsData.Molang.Add(new Database.MolangData() { FunctionName = $"Molang:{FunctionName}", Description = Description });
+            DB.UpdateDocs();
+            await FollowupAsync("Successfully added");
+        }
+
         [SlashCommand("delete-msg", "Deletes a message in a channel")]
         public async Task DeleteMessage(string MsgId, SocketTextChannel channel)
         {

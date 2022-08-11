@@ -49,6 +49,7 @@ namespace PixelPerfectBot
                     DB.CreateUserIfNotExists(User.Id);
                     if (msg.Channel.Id == Config.BotConfiguration.SuggestionChannel)
                     {
+#if !DEBUG
                         await msg.DeleteAsync();
                         var user = DB.GetUser(msg.Author.Id);
                         if (user.SuggestionCooldown > DateTime.UtcNow || user.SentContentCreator)
@@ -71,11 +72,12 @@ namespace PixelPerfectBot
                         DB.UpdateUser(user);
                         DB.AddSuggestion(new Core.Database.Suggestion() { MessageId = Message.Id, UpvotesDownvotes = 0 });
                         DB.TrimFirstSuggestion();
+#endif
                     }
                 }
             });
 
-            _ = Task.Run(async () => {
+                        _ = Task.Run(async () => {
                 var User = msg.Author as SocketGuildUser;
                 var ColorRoles = Config.BotConfiguration.ColorRoles;
                 if(User != null && !User.IsBot && User.Roles.FirstOrDefault(x => x.Id == Config.BotConfiguration.VIPRoleId) == null && User.Roles.FirstOrDefault(x => x.Id == Config.BotConfiguration.BoosterRoleId) == null)

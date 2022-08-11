@@ -11,7 +11,9 @@ namespace PixelPerfectBot.Core
     {
         private const string _dbFolder = "Resources";
         private const string _dbFile = "Database.json";
+        private const string _MCDocdbFile = "MCDocDatabase.json";
         public static DatabaseData? DBData;
+        public static MCDocData? MCDocsData;
 
         public Database()
         {
@@ -32,6 +34,19 @@ namespace PixelPerfectBot.Core
                 {
                     string botConfigJson = File.ReadAllText(_dbFolder + "/" + _dbFile);
                     DBData = JsonConvert.DeserializeObject<DatabaseData>(botConfigJson);
+                }
+
+                //Docs database
+                if (!File.Exists(_dbFolder + "/" + _MCDocdbFile))
+                {
+                    MCDocsData = new MCDocData();
+                    string data = JsonConvert.SerializeObject(MCDocsData, Formatting.Indented);
+                    File.WriteAllText(_dbFolder + "/" + _MCDocdbFile, data);
+                }
+                else
+                {
+                    string data = File.ReadAllText(_dbFolder + "/" + _MCDocdbFile);
+                    MCDocsData = JsonConvert.DeserializeObject<MCDocData>(data);
                 }
             }
             catch (Exception ex)
@@ -152,6 +167,12 @@ namespace PixelPerfectBot.Core
             File.WriteAllText(_dbFolder + "/" + _dbFile, botConfigJson);
         }
 
+        public void UpdateDocs()
+        {
+            string data = JsonConvert.SerializeObject(MCDocsData, Formatting.Indented);
+            File.WriteAllText(_dbFolder + "/" + _MCDocdbFile, data);
+        }
+
         public class DatabaseData
         {
             public List<Ticket> Tickets { get; set; } = new List<Ticket>();
@@ -196,6 +217,19 @@ namespace PixelPerfectBot.Core
 
             public bool SentContentCreator { get; set; }
             public bool SentClaimVIP { get; set; }
+        }
+
+        public class MCDocData
+        {
+            public List<MolangData> Molang { get; set; } = new List<MolangData>();
+        }
+
+        public class MolangData
+        {
+            public string FunctionName { get; set; }
+            public string Description { get; set; }
+            public List<string> Examples { get; set; } = new List<string>();
+            public List<string> LinkResources { get; set; } = new List<string>();
         }
     }
 }
