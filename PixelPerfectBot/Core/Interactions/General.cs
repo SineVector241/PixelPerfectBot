@@ -12,7 +12,7 @@ namespace PixelPerfectBot.Core.Interactions
             var user = Context.User as SocketGuildUser;
             if(user.Roles.FirstOrDefault(x => x.Id == Config.BotConfiguration.VIPRoleId) == null && user.Roles.FirstOrDefault(x => x.Id == Config.BotConfiguration.BoosterRoleId) == null)
             {
-                await RespondAsync("You must be a VIP or a server booster to get a custom color!");
+                await RespondAsync("You must be a VIP or a server booster to get a custom color!", ephemeral: true);
                 return;
             }
             switch(Convert.ToInt16(Selection))
