@@ -82,6 +82,7 @@ namespace PixelPerfectBot
                 var ColorRoles = Config.BotConfiguration.ColorRoles;
                 if(User != null && !User.IsBot && User.Roles.FirstOrDefault(x => x.Id == Config.BotConfiguration.VIPRoleId) == null && User.Roles.FirstOrDefault(x => x.Id == Config.BotConfiguration.BoosterRoleId) == null)
                 {
+#if !DEBUG
                     if (User.Roles.FirstOrDefault(x => x.Id == ColorRoles.Blue) != null)
                         await User.RemoveRoleAsync(ColorRoles.Blue);
                     if (User.Roles.FirstOrDefault(x => x.Id == ColorRoles.Gold) != null)
@@ -112,6 +113,7 @@ namespace PixelPerfectBot
                         await User.RemoveRoleAsync(ColorRoles.DarkTeal);
                     if (User.Roles.FirstOrDefault(x => x.Id == ColorRoles.LightOrange) != null)
                         await User.RemoveRoleAsync(ColorRoles.LightOrange);
+#endif
                 }
             });
         }

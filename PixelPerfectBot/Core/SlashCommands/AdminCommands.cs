@@ -71,6 +71,23 @@ namespace PixelPerfectBot.Core.SlashCommands
     {
         private Database DB = new Database();
 
+        [SlashCommand("create-reactionrole", "Creates a new dashboard to create a reaction role")]
+        public async Task ReactionRoleDash(SocketTextChannel Channel)
+        {
+            var embed = new EmbedBuilder()
+                .WithTitle("New Reaction Role Setup")
+                .WithDescription("Enter description")
+                .WithFooter($"Set to channel: {Channel.Name}")
+                .WithColor(Color.Blue);
+            var builder = new ComponentBuilder()
+                .WithButton("Add Role", $"AddRRRole:{Context.User.Id}", ButtonStyle.Success, Emoji.Parse("➕"))
+                .WithButton("Remove Role", $"RemoveRRRole:{Context.User.Id}", ButtonStyle.Danger, Emoji.Parse("➖"))
+                .WithButton("Set Title", $"SetRRTitle:{Context.User.Id}", ButtonStyle.Primary, Emoji.Parse("✏️"))
+                .WithButton("Set Description", $"SetRRDescription:{Context.User.Id}", ButtonStyle.Primary, Emoji.Parse("✏️"))
+                .WithButton("Send/Publish", $"PublishRR:{Context.User.Id},{Channel.Id}", ButtonStyle.Secondary, Emoji.Parse("✅"));
+            await RespondAsync(embed: embed.Build(), components: builder.Build());
+        }
+
         [SlashCommand("serverinfo", "Displays server information")]
         public async Task ServerInformation()
         {
