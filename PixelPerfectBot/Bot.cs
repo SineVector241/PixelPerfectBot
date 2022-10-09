@@ -18,7 +18,8 @@ namespace PixelPerfectBot
                 LogLevel = LogSeverity.Debug,
                 MessageCacheSize = 100,
                 UseInteractionSnowflakeDate = false,
-                AlwaysDownloadUsers = true
+                AlwaysDownloadUsers = true,
+                GatewayIntents = GatewayIntents.AllUnprivileged | GatewayIntents.GuildMessages
             });
 
             IService = new InteractionService(BotClient, new InteractionServiceConfig

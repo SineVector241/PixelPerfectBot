@@ -295,7 +295,7 @@ namespace PixelPerfectBot.Core.Interactions
 
             if (suggestion.UpvotesDownvotes == 8 && !suggestion.TopSuggestion)
             {
-                await Context.Guild.GetTextChannel(Config.BotConfiguration.TopSuggestionChannel).SendMessageAsync(embed: embed.Build());
+                await Context.Guild.GetTextChannel(Config.BotConfiguration.TopSuggestionChannel).SendMessageAsync(Context.Interaction.Message.GetJumpUrl(),embed: embed.Build());
                 suggestion.TopSuggestion = true;
             }
             DB.UpdateSuggestion(suggestion);
