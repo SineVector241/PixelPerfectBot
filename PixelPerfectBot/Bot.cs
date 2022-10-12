@@ -19,7 +19,7 @@ namespace PixelPerfectBot
                 MessageCacheSize = 100,
                 UseInteractionSnowflakeDate = false,
                 AlwaysDownloadUsers = true,
-                GatewayIntents = GatewayIntents.AllUnprivileged | GatewayIntents.GuildMessages
+                GatewayIntents = GatewayIntents.AllUnprivileged | GatewayIntents.GuildMessages | GatewayIntents.GuildMembers
             });
 
             IService = new InteractionService(BotClient, new InteractionServiceConfig
